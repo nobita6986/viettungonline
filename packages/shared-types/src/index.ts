@@ -12,20 +12,6 @@ export type {
   MonthlySummary,
 } from '@prisma/client';
 
-// Service types
-export type {
-  CreateTransactionInput,
-  UpdateTransactionInput,
-  TransactionFilter,
-  TransactionSummary,
-} from '@/services/transaction.service';
-
-export type {
-  CreateOrderInput,
-  UpdateOrderInput,
-  OrderFilter,
-} from '@/services/order.service';
-
 // UI Types
 export interface SelectOption {
   value: string;
@@ -42,7 +28,7 @@ export interface TableColumn<T> {
   header: string;
   width?: string;
   align?: 'left' | 'center' | 'right';
-  render?: (value: unknown, record: T) => React.ReactNode;
+  render?: (value: unknown, record: T) => any;
 }
 
 export interface PaginationInfo {
