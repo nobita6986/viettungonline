@@ -1,7 +1,7 @@
 'use client';
 
 import React, { lazy, Suspense } from 'react';
-import { DashboardSummary, ChartDataPoint } from '@/app/actions/dashboard';
+import type { DashboardSummary, ChartDataPoint } from '@/app/actions/dashboard';
 import { formatCurrency } from '@/lib/formatters';
 
 const RevenueChart_Lazy = lazy(() => import('./RevenueChart'));

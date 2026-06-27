@@ -11,7 +11,7 @@ import {
   Legend,
   ResponsiveContainer
 } from 'recharts';
-import { ChartDataPoint } from '@/app/actions/dashboard';
+import type { ChartDataPoint } from '@/app/actions/dashboard';
 import { formatCurrency } from '@/lib/formatters';
 
 interface RevenueChartProps {
