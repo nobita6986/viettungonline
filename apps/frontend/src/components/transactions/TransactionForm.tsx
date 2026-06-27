@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { TransactionType } from '@prisma/client';
 import { createTransaction, updateTransaction } from '@/app/actions/transactions';
 import toast from 'react-hot-toast';
 
@@ -44,7 +43,7 @@ export default function TransactionForm({
 
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
-    type: 'EXPENSE' as TransactionType,
+    type: 'EXPENSE' as 'INCOME' | 'EXPENSE',
     amount: '',
     description: '',
     categoryId: '',

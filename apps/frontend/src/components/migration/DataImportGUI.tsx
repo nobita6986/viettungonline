@@ -8,12 +8,12 @@ import { parseAndMapOrderData } from '@/utils/order-mapper';
 
 export function autoMapFinanceData(rawData: any[], dependencies: any) {
   const { accounts, categories, users } = dependencies;
-  
+
   return rawData.map((row, index) => {
     // 1. Amount & Type
     let amountNum = 0;
     let type = 'EXPENSE';
-    
+
     const rawThu = parseFloat(String(row['Thu'] || '0').replace(/,/g, ''));
     const rawChi = parseFloat(String(row['Chi'] || '0').replace(/,/g, ''));
 
@@ -61,8 +61,8 @@ export function autoMapFinanceData(rawData: any[], dependencies: any) {
 
     let userId = '';
     if (executer) {
-      const userMatch = (users || []).find((u: any) => 
-        u.name?.toLowerCase().includes(executer.toLowerCase()) || 
+      const userMatch = (users || []).find((u: any) =>
+        u.name?.toLowerCase().includes(executer.toLowerCase()) ||
         executer.toLowerCase().includes(u.name?.toLowerCase() || '')
       );
       if (userMatch) userId = userMatch.id;
@@ -93,7 +93,7 @@ export default function DataImportGUI() {
   const [dependencies, setDependencies] = useState<any>(null);
   const [parsedData, setParsedData] = useState<any[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  
+
   // States for Unified Wizard (RECONCILE Tab)
   const [financeFiles, setFinanceFiles] = useState<File[]>([]);
   const [orderFile, setOrderFile] = useState<File | null>(null);
@@ -140,17 +140,17 @@ export default function DataImportGUI() {
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = xlsx.utils.sheet_to_json(worksheet, { defval: '' });
-        
+
         if (jsonData.length === 0) {
           toast.error('File Excel không có dữ liệu', { id: toastId });
           setIsLoading(false);
           return;
         }
 
-        const mappedData = importType === 'FINANCE' 
+        const mappedData = importType === 'FINANCE'
           ? autoMapFinanceData(jsonData, dependencies)
           : parseAndMapOrderData(jsonData, dependencies);
-          
+
         setParsedData(mappedData);
         toast.success(`Đã phân tích xong ${mappedData.length} dòng`, { id: toastId });
       } catch (error) {
@@ -164,7 +164,7 @@ export default function DataImportGUI() {
   };
 
   const handleFieldChange = (id: number, field: string, value: any) => {
-    setParsedData(prev => prev.map(row => 
+    setParsedData(prev => prev.map(row =>
       row.id === id ? { ...row, [field]: value } : row
     ));
   };
@@ -176,9 +176,9 @@ export default function DataImportGUI() {
   const handleSave = async () => {
     if (importType === 'FINANCE') {
       // Validate missing fields for Finance
-      const invalidRows = parsedData.filter(d => !d.accountId || !d.date || !d.amount);
+      const invalidRows = parsedData.filter(d => !d.accountId || !d.date || !d.amount || !d.description);
       if (invalidRows.length > 0) {
-        toast.error(`Có ${invalidRows.length} dòng chưa điền đủ Tài khoản, Ngày, hoặc Số tiền`);
+        toast.error(`Có ${invalidRows.length} dòng chưa điền đủ Tài khoản, Ngày, hoặc Số tiền/Ghi chú`);
         return;
       }
     } else {
@@ -192,12 +192,12 @@ export default function DataImportGUI() {
 
     setIsSaving(true);
     const loadingToast = toast.loading('Đang lưu dữ liệu vào hệ thống...');
-    
+
     try {
       const result = importType === 'FINANCE'
         ? await importBulkTransactions(parsedData)
         : await importBulkOrders(parsedData);
-        
+
       if (result.success) {
         toast.success(`Đã lưu thành công ${result.successCount} bản ghi!`, { id: loadingToast });
         setParsedData([]); // Clear after save
@@ -303,7 +303,7 @@ export default function DataImportGUI() {
   return (
     <div className="space-y-6 max-w-6xl mx-auto p-4">
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        
+
         {/* Tabs */}
         <div className="flex border-b border-gray-200">
           <button
@@ -336,7 +336,7 @@ export default function DataImportGUI() {
             Công cụ Review trực quan. Bạn có thể chỉnh sửa lại dữ liệu bị map sai trước khi lưu thật vào hệ thống.
           </p>
         </div>
-        
+
         {importType === 'RECONCILE' ? (
           <div className="p-6 space-y-8">
             <div className="bg-blue-50 border border-blue-100 rounded-lg p-5">
@@ -345,7 +345,7 @@ export default function DataImportGUI() {
                 Khu vực upload tất cả các file cùng lúc. Hệ thống sẽ tự động ghép nối, import và chạy thuật toán đối soát 3 bước để liên kết dòng tiền với Đơn Hàng tương ứng.
               </p>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Box Upload Tài Chính */}
               <div className="border border-gray-200 rounded-xl p-5 shadow-sm bg-white">
@@ -358,26 +358,26 @@ export default function DataImportGUI() {
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ pointerEvents: 'none' }}>
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                     </svg>
-                    <input 
+                    <input
                       id="finance-upload"
-                      type="file" 
-                      multiple 
-                      accept=".xlsx,.xls" 
-                      className="hidden" 
+                      type="file"
+                      multiple
+                      accept=".xlsx,.xls"
+                      className="hidden"
                       onChange={(e) => {
                         if (e.target.files && e.target.files.length > 0) {
                           const filesToAdd = Array.from(e.target.files);
                           setFinanceFiles(prev => [...prev, ...filesToAdd]);
                         }
                         e.target.value = ''; // Reset input
-                      }} 
+                      }}
                     />
                   </label>
                 </div>
-                
+
                 {financeFiles.length === 0 ? (
                   <div className="text-center py-8 text-sm text-gray-400 border-2 border-dashed rounded-lg">
-                    Chưa có file nào.<br/>Nhấn dấu + để tải lên sổ quỹ các tháng.
+                    Chưa có file nào.<br />Nhấn dấu + để tải lên sổ quỹ các tháng.
                   </div>
                 ) : (
                   <ul className="space-y-2 max-h-48 overflow-y-auto pr-1">
@@ -402,22 +402,22 @@ export default function DataImportGUI() {
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ pointerEvents: 'none' }}>
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                     </svg>
-                    <input 
+                    <input
                       id="order-upload"
-                      type="file" 
-                      accept=".xlsx,.xls" 
-                      className="hidden" 
+                      type="file"
+                      accept=".xlsx,.xls"
+                      className="hidden"
                       onChange={(e) => {
                         if (e.target.files && e.target.files.length > 0) {
                           const file = e.target.files[0];
                           setOrderFile(file);
                         }
                         e.target.value = '';
-                      }} 
+                      }}
                     />
                   </label>
                 </div>
-                
+
                 {!orderFile ? (
                   <div className="text-center py-8 text-sm text-gray-400 border-2 border-dashed rounded-lg">
                     Chưa có file Đơn Hàng.
@@ -432,14 +432,14 @@ export default function DataImportGUI() {
             </div>
 
             <div className="border-t pt-6 flex flex-col items-center">
-              <button 
+              <button
                 onClick={handleWizardSubmit}
                 disabled={isLoading || (financeFiles.length === 0 && !orderFile)}
                 className="bg-primary-600 disabled:bg-gray-300 hover:bg-primary-700 text-white font-bold py-3 px-8 rounded-full shadow-md transition-all transform hover:scale-105 active:scale-95"
               >
                 {isLoading ? 'Hệ thống đang chạy...' : '🚀 CHẠY TOÀN BỘ QUY TRÌNH (BƯỚC 3)'}
               </button>
-              
+
               {wizardStatus && (
                 <div className="mt-4 w-full max-w-md text-center">
                   <p className="text-sm font-semibold text-gray-700 mb-2">{wizardStatus}</p>
@@ -449,7 +449,7 @@ export default function DataImportGUI() {
                 </div>
               )}
             </div>
-            
+
             {reconcileResult && (
               <div className="mt-6 border rounded-xl overflow-hidden shadow-sm">
                 <div className="bg-white p-4 border-b flex justify-between items-center">
@@ -496,7 +496,7 @@ export default function DataImportGUI() {
                 <h3 className="font-semibold text-sm">Chưa có file mẫu?</h3>
                 <p className="text-xs text-muted-foreground">Tải file mẫu về, điền dữ liệu bằng Excel và upload trực tiếp lên đây (Không cần lưu thành CSV).</p>
               </div>
-              <a 
+              <a
                 href={importType === 'FINANCE' ? "/templates/Mau_Import_DuLieu.xlsx" : "/Mau_Import_DonHang.xlsx"}
                 download
                 className="mt-2 sm:mt-0 flex items-center px-3 py-1.5 text-sm font-medium border border-gray-300 rounded-md bg-white text-gray-700 hover:bg-gray-50"
@@ -508,30 +508,30 @@ export default function DataImportGUI() {
               </a>
             </div>
 
-              <div className="grid w-full items-center gap-2">
-                <label className="font-semibold text-sm text-gray-700">Chọn file dữ liệu (Excel):</label>
-                <div className="flex gap-2">
-                  <input 
-                    type="file" 
-                    accept=".xlsx, .xls" 
-                    onChange={handleFileChange}
-                    disabled={isLoading}
-                    className="flex h-10 w-full max-w-sm rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  />
-                  <button
-                    onClick={processFile}
-                    disabled={!selectedFile || isLoading || !dependencies}
-                    className="h-10 px-4 bg-primary-600 text-white text-sm font-medium rounded-md hover:bg-primary-700 disabled:opacity-50 transition-colors"
-                  >
-                    {isLoading ? 'Đang đọc...' : 'Đọc File Excel'}
-                  </button>
-                </div>
-                {!dependencies && (
-                  <p className="text-xs text-amber-600 mt-1">
-                    Đang kết nối Database để tải danh mục. Nút đọc file sẽ mở khi kết nối xong.
-                  </p>
-                )}
+            <div className="grid w-full items-center gap-2">
+              <label className="font-semibold text-sm text-gray-700">Chọn file dữ liệu (Excel):</label>
+              <div className="flex gap-2">
+                <input
+                  type="file"
+                  accept=".xlsx, .xls"
+                  onChange={handleFileChange}
+                  disabled={isLoading}
+                  className="flex h-10 w-full max-w-sm rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+                <button
+                  onClick={processFile}
+                  disabled={!selectedFile || isLoading || !dependencies}
+                  className="h-10 px-4 bg-primary-600 text-white text-sm font-medium rounded-md hover:bg-primary-700 disabled:opacity-50 transition-colors"
+                >
+                  {isLoading ? 'Đang đọc...' : 'Đọc File Excel'}
+                </button>
               </div>
+              {!dependencies && (
+                <p className="text-xs text-amber-600 mt-1">
+                  Đang kết nối Database để tải danh mục. Nút đọc file sẽ mở khi kết nối xong.
+                </p>
+              )}
+            </div>
           </div>
         ) : (
           <div className="flex flex-col">
@@ -540,13 +540,13 @@ export default function DataImportGUI() {
                 Chế độ Review ({parsedData.length} dòng)
               </h3>
               <div className="space-x-3">
-                <button 
+                <button
                   onClick={() => setParsedData([])}
                   className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium"
                 >
                   Hủy bỏ
                 </button>
-                <button 
+                <button
                   onClick={handleSave}
                   disabled={isSaving}
                   className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm font-medium"
@@ -561,112 +561,112 @@ export default function DataImportGUI() {
               {importType === 'FINANCE' ? (
                 <table className="w-full text-sm text-left">
                   <thead className="text-xs text-gray-500 bg-gray-50 uppercase sticky top-0 z-10 shadow-sm">
-                  <tr>
-                    <th className="px-4 py-3 w-[60px] text-center">STT</th>
-                    <th className="px-4 py-3 min-w-[120px]">Ngày</th>
-                    <th className="px-4 py-3 min-w-[100px]">Loại</th>
-                    <th className="px-4 py-3 min-w-[150px]">Số tiền</th>
-                    <th className="px-4 py-3 min-w-[150px]">Loại tiền (Danh mục)</th>
-                    <th className="px-4 py-3 min-w-[200px]">Mô tả</th>
-                    <th className="px-4 py-3 min-w-[150px]">Tài khoản</th>
-                    <th className="px-4 py-3 min-w-[150px]">Người thực hiện</th>
-                    <th className="px-4 py-3 min-w-[150px]">Nhóm</th>
-                    <th className="px-4 py-3 w-[80px] text-center">Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {parsedData.map((row, index) => (
-                    <tr key={row.id} className="hover:bg-slate-100 even:bg-slate-50 transition-colors">
-                      <td className="px-4 py-2 text-center font-medium text-gray-500">
-                        {index + 1}
-                      </td>
-                      <td className="px-4 py-2">
-                        <input 
-                          type="date"
-                          value={row.date}
-                          onChange={(e) => handleFieldChange(row.id, 'date', e.target.value)}
-                          className={`w-full text-sm border-gray-300 rounded ${!row.date ? 'border-red-500 bg-red-50' : ''}`}
-                        />
-                      </td>
-                      <td className="px-4 py-2 font-bold">
-                         <span className={row.type === 'INCOME' ? 'text-green-600' : 'text-red-600'}>
-                           {row.type === 'INCOME' ? 'THU' : 'CHI'}
-                         </span>
-                      </td>
-                      <td className="px-4 py-2">
-                        <input 
-                          type="number"
-                          value={row.amount || ''}
-                          onChange={(e) => handleFieldChange(row.id, 'amount', Number(e.target.value))}
-                          className={`w-full text-sm border-gray-300 rounded ${!row.amount ? 'border-red-500 bg-red-50' : ''}`}
-                        />
-                      </td>
-                      <td className="px-4 py-2">
-                        <input 
-                          type="text"
-                          value={row.categoryName || ''}
-                          onChange={(e) => handleFieldChange(row.id, 'categoryName', e.target.value)}
-                          className="w-full text-sm border-gray-300 rounded"
-                          placeholder="Chi cho việc gì?"
-                        />
-                      </td>
-                      <td className="px-4 py-2">
-                        <input 
-                          type="text"
-                          value={row.description}
-                          onChange={(e) => handleFieldChange(row.id, 'description', e.target.value)}
-                          className="w-full text-sm border-gray-300 rounded"
-                        />
-                      </td>
-                      <td className="px-4 py-2">
-                        <select
-                          value={row.accountId}
-                          onChange={(e) => handleFieldChange(row.id, 'accountId', e.target.value)}
-                          className={`w-full text-sm border-gray-300 rounded ${!row.accountId ? 'border-red-500 bg-red-50 text-red-600 font-bold' : ''}`}
-                        >
-                          <option value="">-- Chọn tài khoản --</option>
-                          {dependencies?.accounts?.map((acc: any) => (
-                            <option key={acc.id} value={acc.id}>{acc.name}</option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="px-4 py-2">
-                         <select
-                          value={row.userId || ''}
-                          onChange={(e) => handleFieldChange(row.id, 'userId', e.target.value)}
-                          className={`w-full text-sm border-gray-300 rounded ${!row.userId ? 'border-amber-300 bg-amber-50' : ''}`}
-                        >
-                          <option value="">-- Trống --</option>
-                          {dependencies?.users?.map((u: any) => (
-                            <option key={u.id} value={u.id}>{u.name || u.email}</option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="px-4 py-2">
-                         <select
-                          value={row.cashFlowGroup}
-                          onChange={(e) => handleFieldChange(row.id, 'cashFlowGroup', e.target.value)}
-                          className="w-full text-sm border-gray-300 rounded"
-                        >
-                          <option value="OPERATIONAL">VẬN HÀNH</option>
-                          <option value="TRADING">TIỀN HÀNG</option>
-                        </select>
-                      </td>
-                      <td className="px-4 py-2 text-center">
-                        <button
-                          onClick={() => handleRemoveRow(row.id)}
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1.5 rounded transition-colors"
-                          title="Xóa dòng này"
-                        >
-                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                      </td>
+                    <tr>
+                      <th className="px-4 py-3 w-[60px] text-center">STT</th>
+                      <th className="px-4 py-3 min-w-[120px]">Ngày</th>
+                      <th className="px-4 py-3 min-w-[100px]">Loại</th>
+                      <th className="px-4 py-3 min-w-[150px]">Số tiền</th>
+                      <th className="px-4 py-3 min-w-[150px]">Loại tiền (Danh mục)</th>
+                      <th className="px-4 py-3 min-w-[200px]">Mô tả</th>
+                      <th className="px-4 py-3 min-w-[150px]">Tài khoản</th>
+                      <th className="px-4 py-3 min-w-[150px]">Người thực hiện</th>
+                      <th className="px-4 py-3 min-w-[150px]">Nhóm</th>
+                      <th className="px-4 py-3 w-[80px] text-center">Thao tác</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {parsedData.map((row, index) => (
+                      <tr key={row.id} className="hover:bg-slate-100 even:bg-slate-50 transition-colors">
+                        <td className="px-4 py-2 text-center font-medium text-gray-500">
+                          {index + 1}
+                        </td>
+                        <td className="px-4 py-2">
+                          <input
+                            type="date"
+                            value={row.date}
+                            onChange={(e) => handleFieldChange(row.id, 'date', e.target.value)}
+                            className={`w-full text-sm border-gray-300 rounded ${!row.date ? 'border-red-500 bg-red-50' : ''}`}
+                          />
+                        </td>
+                        <td className="px-4 py-2 font-bold">
+                          <span className={row.type === 'INCOME' ? 'text-green-600' : 'text-red-600'}>
+                            {row.type === 'INCOME' ? 'THU' : 'CHI'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2">
+                          <input
+                            type="number"
+                            value={row.amount || ''}
+                            onChange={(e) => handleFieldChange(row.id, 'amount', Number(e.target.value))}
+                            className={`w-full text-sm border-gray-300 rounded ${!row.amount ? 'border-red-500 bg-red-50' : ''}`}
+                          />
+                        </td>
+                        <td className="px-4 py-2">
+                          <input
+                            type="text"
+                            value={row.categoryName || ''}
+                            onChange={(e) => handleFieldChange(row.id, 'categoryName', e.target.value)}
+                            className="w-full text-sm border-gray-300 rounded"
+                            placeholder="Chi cho việc gì?"
+                          />
+                        </td>
+                        <td className="px-4 py-2">
+                          <input
+                            type="text"
+                            value={row.description}
+                            onChange={(e) => handleFieldChange(row.id, 'description', e.target.value)}
+                            className={`w-full text-sm border-gray-300 rounded ${!row.description ? 'border-red-500 bg-red-50' : ''}`}
+                          />
+                        </td>
+                        <td className="px-4 py-2">
+                          <select
+                            value={row.accountId}
+                            onChange={(e) => handleFieldChange(row.id, 'accountId', e.target.value)}
+                            className={`w-full text-sm border-gray-300 rounded ${!row.accountId ? 'border-red-500 bg-red-50 text-red-600 font-bold' : ''}`}
+                          >
+                            <option value="">-- Chọn tài khoản --</option>
+                            {dependencies?.accounts?.map((acc: any) => (
+                              <option key={acc.id} value={acc.id}>{acc.name}</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="px-4 py-2">
+                          <select
+                            value={row.userId || ''}
+                            onChange={(e) => handleFieldChange(row.id, 'userId', e.target.value)}
+                            className={`w-full text-sm border-gray-300 rounded ${!row.userId ? 'border-amber-300 bg-amber-50' : ''}`}
+                          >
+                            <option value="">-- Trống --</option>
+                            {dependencies?.users?.map((u: any) => (
+                              <option key={u.id} value={u.id}>{u.name || u.email}</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="px-4 py-2">
+                          <select
+                            value={row.cashFlowGroup}
+                            onChange={(e) => handleFieldChange(row.id, 'cashFlowGroup', e.target.value)}
+                            className="w-full text-sm border-gray-300 rounded"
+                          >
+                            <option value="OPERATIONAL">VẬN HÀNH</option>
+                            <option value="TRADING">TIỀN HÀNG</option>
+                          </select>
+                        </td>
+                        <td className="px-4 py-2 text-center">
+                          <button
+                            onClick={() => handleRemoveRow(row.id)}
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1.5 rounded transition-colors"
+                            title="Xóa dòng này"
+                          >
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               ) : (
                 <table className="w-full text-sm text-left">
                   <thead className="text-xs text-gray-500 bg-gray-50 uppercase sticky top-0 z-10 shadow-sm">
