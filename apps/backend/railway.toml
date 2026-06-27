@@ -3,7 +3,7 @@ nixPkgs = ["nodejs_22", "pnpm"]
 
 [build]
 builder = "nixpacks"
-buildCommand = "pnpm install && pnpm --filter backend build"
+buildCommand = "pnpm install && pnpm --filter backend build && pnpm --filter database prisma generate"
 
 [deploy]
 startCommand = "node apps/backend/dist/main.js"
