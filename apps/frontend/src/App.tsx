@@ -1,6 +1,7 @@
-import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import React, { useState, useEffect, Suspense, lazy } from 'react';
 import apiClient from './lib/apiClient';
+import { useAuthStore } from './stores/useAuthStore';
 
 // ============================================
 // LAZY LOAD COMPONENTS
@@ -16,6 +17,7 @@ const CommissionsClient = lazy(() => import('./components/commissions/Commission
 const UserListClient = lazy(() => import('./components/users/UserListClient'));
 const EmployeeCashflowClient = lazy(() => import('./components/employee-cashflow/EmployeeCashflowClient'));
 const ReconciliationDashboard = lazy(() => import('./components/reconciliation/ReconciliationDashboard'));
+const LoginPage = lazy(() => import('./pages/LoginPage'));
 
 // ============================================
 // UTILITY COMPONENTS
@@ -32,6 +34,19 @@ const ErrorMessage = ({ message }: { message: string }) => (
     <p className="text-sm">{message}</p>
   </div>
 );
+
+// ============================================
+// AUTH PROTECTED ROUTE
+// ============================================
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated } = useAuthStore();
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  return <>{children}</>;
+}
 
 // ============================================
 // DATA FETCHING HOOKS
@@ -72,22 +87,59 @@ function useApiData<T>(fetchFn: () => Promise<T>, deps: any[] = []) {
 
 // Dashboard Page
 function DashboardPage() {
-  const { data, loading, error } = useApiData(async () => {
-    try {
-      const res = await apiClient.get('/dashboard/summary');
-      return res.data;
-    } catch {
-      return { summary: { totalIncome: 0, totalExpense: 0, profit: 0, orderCount: 0, accountBalances: [] }, chartData: [] };
-    }
-  });
+  const [summary, setSummary] = useState<any>(null);
+  const [chartData, setChartData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        const [SummaryRes, chartRes] = await Promise.all([
+          apiClient.get('/dashboard/summary'),
+          apiClient.get('/dashboard/chart'),
+        ]);
+        
+        const summaryData = SummaryRes.data?.data || SummaryRes.data || {};
+        const chartDataResult = chartRes.data?.data || chartRes.data || [];
+        
+        const transformedSummary = {
+          totalIncome: summaryData.totalIncome || 0,
+          totalExpense: summaryData.totalExpense || 0,
+          profit: summaryData.netProfit || summaryData.profit || 0,
+          orderCount: summaryData.orderCount || 0,
+          accountBalances: [],
+          operational: summaryData.operational || { income: 0, expense: 0, profit: 0 },
+          trading: summaryData.trading || { income: 0, expense: 0, profit: 0 },
+          debtSummary: summaryData.debtSummary || { receivable: { current: 0, overdue: 0 }, payable: { current: 0, overdue: 0 } },
+          topProducts: summaryData.topProducts || [],
+        };
+        
+        setSummary(transformedSummary);
+        setChartData(chartDataResult.map((d: any) => ({
+          label: d.month || d.label || '',
+          income: d.income || 0,
+          expense: d.expense || 0,
+        })));
+      } catch (err: any) {
+        console.error('Dashboard fetch error:', err);
+        setError(err.message || 'Lỗi khi tải dữ liệu dashboard');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchDashboardData();
+  }, []);
 
   if (loading) return <LoadingSpinner />;
   if (error) return <ErrorMessage message={error} />;
 
   return (
     <DashboardClient 
-      summary={data?.summary || { totalIncome: 0, totalExpense: 0, profit: 0, orderCount: 0, accountBalances: [] }} 
-      chartData={data?.chartData || []} 
+      summary={summary || { totalIncome: 0, totalExpense: 0, profit: 0, orderCount: 0, accountBalances: [] }} 
+      chartData={chartData} 
     />
   );
 }
@@ -276,24 +328,6 @@ function EmployeeCashflowPage() {
 
 // Reconciliation Page
 function ReconciliationPage() {
-  const { data, loading, error } = useApiData(async () => {
-    try {
-      const [orphanTxsRes, pendingOrdersRes] = await Promise.all([
-        apiClient.get('/reconciliation/orphan-transactions'),
-        apiClient.get('/reconciliation/pending-orders')
-      ]);
-      return { 
-        transactions: data?.transactions || [],
-        orders: data?.orders || []
-      };
-    } catch {
-      return { transactions: [], orders: [] };
-    }
-  });
-
-  if (loading) return <LoadingSpinner />;
-  if (error) return <ErrorMessage message={error} />;
-
   return <ReconciliationDashboard transactions={[]} orders={[]} />;
 }
 
@@ -302,6 +336,7 @@ function ReconciliationPage() {
 // ============================================
 function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
+  const { user, logout } = useAuthStore();
   
   const navItems = [
     { path: '/', label: 'Trang chủ', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
@@ -348,14 +383,25 @@ function Layout({ children }: { children: React.ReactNode }) {
 
         {/* User info */}
         <div className="p-4 border-t border-gray-100 bg-gray-50">
-          <div className="flex items-center">
-            <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-medium text-sm">
-              A
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-medium text-sm">
+                {user?.name?.charAt(0)?.toUpperCase() || 'A'}
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-gray-900">{user?.name || 'Admin'}</p>
+                <p className="text-xs text-gray-500">{user?.email || 'admin@viettung.vn'}</p>
+              </div>
             </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-900">Admin</p>
-              <p className="text-xs text-gray-500">admin@viettung.vn</p>
-            </div>
+            <button 
+              onClick={logout}
+              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
+              title="Đăng xuất"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+            </button>
           </div>
         </div>
       </aside>
@@ -374,35 +420,89 @@ function Layout({ children }: { children: React.ReactNode }) {
 // MAIN APP
 // ============================================
 function App() {
+  const { isAuthenticated } = useAuthStore();
+
   return (
     <BrowserRouter>
-      <Layout>
+      <Suspense fallback={<LoadingSpinner />}>
         <Routes>
-          {/* Dashboard */}
-          <Route path="/" element={<DashboardPage />} />
+          {/* Login Page */}
+          <Route 
+            path="/login" 
+            element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />} 
+          />
           
-          {/* Core Modules */}
-          <Route path="/orders" element={<OrdersPage />} />
-          <Route path="/products" element={<ProductsPage />} />
-          <Route path="/transactions" element={<TransactionsPage />} />
-          <Route path="/customers" element={<CustomersPage />} />
-          <Route path="/debts" element={<DebtsPage />} />
+          {/* Protected Routes */}
+          <Route path="/" element={
+            <ProtectedRoute>
+              <Layout><DashboardPage /></Layout>
+            </ProtectedRoute>
+          } />
           
-          {/* Reports & Analysis */}
-          <Route path="/reports" element={<ReportsPage />} />
-          <Route path="/commissions" element={<CommissionsPage />} />
+          <Route path="/orders" element={
+            <ProtectedRoute>
+              <Layout><OrdersPage /></Layout>
+            </ProtectedRoute>
+          } />
           
-          {/* HR & Finance */}
-          <Route path="/users" element={<UsersPage />} />
-          <Route path="/employee-cashflow" element={<EmployeeCashflowPage />} />
+          <Route path="/products" element={
+            <ProtectedRoute>
+              <Layout><ProductsPage /></Layout>
+            </ProtectedRoute>
+          } />
           
-          {/* Utilities */}
-          <Route path="/reconciliation" element={<ReconciliationPage />} />
+          <Route path="/transactions" element={
+            <ProtectedRoute>
+              <Layout><TransactionsPage /></Layout>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/customers" element={
+            <ProtectedRoute>
+              <Layout><CustomersPage /></Layout>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/debts" element={
+            <ProtectedRoute>
+              <Layout><DebtsPage /></Layout>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/reports" element={
+            <ProtectedRoute>
+              <Layout><ReportsPage /></Layout>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/commissions" element={
+            <ProtectedRoute>
+              <Layout><CommissionsPage /></Layout>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/users" element={
+            <ProtectedRoute>
+              <Layout><UsersPage /></Layout>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/employee-cashflow" element={
+            <ProtectedRoute>
+              <Layout><EmployeeCashflowPage /></Layout>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/reconciliation" element={
+            <ProtectedRoute>
+              <Layout><ReconciliationPage /></Layout>
+            </ProtectedRoute>
+          } />
           
           {/* Fallback */}
-          <Route path="*" element={<DashboardPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </Layout>
+      </Suspense>
     </BrowserRouter>
   );
 }
