@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { formatCurrency } from '@/lib/formatters';
-import { createCommissionRule, updateCommissionRule, deleteCommissionRule, calculatePayout, markPayoutAsPaid } from '@/app/actions/commissions';
+import { createCommissionRule, updateCommissionRule, deleteCommissionRule, calculatePayout, markPayoutAsPaid } from '@/lib/apiActions';
 import toast from 'react-hot-toast';
 import { PlusIcon, CheckCircleIcon, TrashIcon } from '@heroicons/react/24/outline';
 import CommissionRuleModal from './CommissionRuleModal';

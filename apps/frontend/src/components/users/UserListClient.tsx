@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import UserForm from './UserForm';
-import { createUser, updateUser, deleteUser } from '@/app/actions/users';
+import { createUser, updateUser, deleteUser } from '@/lib/apiActions';
 import toast from 'react-hot-toast';
 
 interface UserListClientProps {

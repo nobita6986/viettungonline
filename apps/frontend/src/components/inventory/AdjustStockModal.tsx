@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { adjustStock } from '@/app/actions/inventory';
+import { adjustStock } from '@/lib/apiActions';
 import toast from 'react-hot-toast';
 
 interface Product {

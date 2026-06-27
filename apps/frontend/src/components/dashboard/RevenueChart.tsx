@@ -11,8 +11,13 @@ import {
   Legend,
   ResponsiveContainer
 } from 'recharts';
-import type { ChartDataPoint } from '@/app/actions/dashboard';
 import { formatCurrency } from '@/lib/formatters';
+
+interface ChartDataPoint {
+  label: string;
+  income: number;
+  expense: number;
+}
 
 interface RevenueChartProps {
   data: ChartDataPoint[];

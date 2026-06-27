@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { processDataMigration } from '@/app/actions/migration';
+import { processDataMigration } from '@/lib/apiActions';
 import { toast } from 'react-hot-toast';
 
 export default function ImportDataUI() {

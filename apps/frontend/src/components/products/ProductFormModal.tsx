@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { createProduct } from '@/app/actions/products';
+import { createProduct } from '@/lib/apiActions';
 import toast from 'react-hot-toast';
 import { useSearchParams } from 'react-router-dom';
 import { useRouter, usePathname } from '@/hooks/useRouter';

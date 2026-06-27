@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PlusIcon, CheckCircleIcon, XCircleIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import EmployeeTxForm from './EmployeeTxForm';
-import { createEmployeeTransaction, updateEmployeeTransaction, deleteEmployeeTransaction, approveEmployeeTransaction, rejectEmployeeTransaction, approveMultipleEmployeeTransactions } from '@/app/actions/employee-transactions';
+import { createEmployeeTransaction, updateEmployeeTransaction, deleteEmployeeTransaction, approveEmployeeTransaction, rejectEmployeeTransaction, approveMultipleEmployeeTransactions } from '@/lib/apiActions';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '@/lib/formatters';
 import { usePermissions } from '@/hooks/usePermissions';

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { updateProduct } from '@/app/actions/products';
+import { updateProduct } from '@/lib/apiActions';
 import toast from 'react-hot-toast';
 import ImportStockModal from '../inventory/ImportStockModal';
 import AdjustStockModal from '../inventory/AdjustStockModal';

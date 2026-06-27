@@ -5,7 +5,7 @@ import { formatCurrency, formatDateVN } from '@/lib/formatters';
 import OrderForm from './OrderForm';
 import toast from 'react-hot-toast';
 import { usePermissions } from '@/hooks/usePermissions';
-import { deleteOrder } from '@/app/actions/orders';
+import { deleteOrder } from '@/lib/apiActions';
 import { PencilIcon, TrashIcon, EyeIcon } from '@heroicons/react/24/outline';
 import { useOptimisticMutation } from '@/hooks/useOptimisticMutation';
 

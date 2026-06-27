@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import clsx from 'clsx';
 import { formatCurrency, formatDateVN } from '@/lib/formatters';
 import TransactionForm from './TransactionForm';
-import { deleteTransaction } from '@/app/actions/transactions';
+import { deleteTransaction } from '@/lib/apiActions';
 import toast from 'react-hot-toast';
 import { useSearchParams } from 'react-router-dom';
 import { useRouter, usePathname } from '@/hooks/useRouter';

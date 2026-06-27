@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { createOrder, updateOrder } from '@/app/actions/orders';
-import { createCustomer } from '@/app/actions/customers';
+import { createOrder, updateOrder } from '@/lib/apiActions';
+import { createCustomer } from '@/lib/apiActions';
 import toast from 'react-hot-toast';
 
 interface OrderFormProps {

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { getInventoryHistory } from '@/app/actions/inventory';
+import { getInventoryHistory } from '@/lib/apiActions';
 import { format } from 'date-fns';
 
 interface InventoryHistoryModalProps {

@@ -1,5 +1,31 @@
 import { z } from 'zod';
-import { PurchaseStatus, SaleStatus, OrderStatus } from '@prisma/client';
+
+// Status enums - defined locally to avoid Prisma dependency in frontend
+export const PurchaseStatus = {
+  PENDING: 'PENDING',
+  PAID: 'PAID',
+  PARTIAL: 'PARTIAL',
+  CANCELLED: 'CANCELLED',
+} as const;
+
+export const SaleStatus = {
+  PENDING: 'PENDING',
+  PAID: 'PAID',
+  PARTIAL: 'PARTIAL',
+  CANCELLED: 'CANCELLED',
+} as const;
+
+export const OrderStatus = {
+  PENDING: 'PENDING',
+  CONFIRMED: 'CONFIRMED',
+  SHIPPING: 'SHIPPING',
+  COMPLETED: 'COMPLETED',
+  CANCELLED: 'CANCELLED',
+} as const;
+
+export type TPurchaseStatus = (typeof PurchaseStatus)[keyof typeof PurchaseStatus];
+export type TSaleStatus = (typeof SaleStatus)[keyof typeof SaleStatus];
+export type TOrderStatus = (typeof OrderStatus)[keyof typeof OrderStatus];
 
 export const CreateOrderSchema = z.object({
   productName: z.string().min(1, 'Tên sản phẩm không được để trống'),
@@ -7,10 +33,10 @@ export const CreateOrderSchema = z.object({
   qty: z.number().positive('Số lượng phải lớn hơn 0').optional(),
   
   purchasePrice: z.number().min(0, 'Giá mua không được âm'),
-  purchaseStatus: z.nativeEnum(PurchaseStatus).optional(),
+  purchaseStatus: z.enum(['PENDING', 'PAID', 'PARTIAL', 'CANCELLED']).optional(),
   
   salePrice: z.number().min(0, 'Giá bán không được âm'),
-  saleStatus: z.nativeEnum(SaleStatus).optional(),
+  saleStatus: z.enum(['PENDING', 'PAID', 'PARTIAL', 'CANCELLED']).optional(),
   
   supplierId: z.string().optional(),
   customerId: z.string().optional(),
@@ -18,5 +44,5 @@ export const CreateOrderSchema = z.object({
 });
 
 export const UpdateOrderSchema = CreateOrderSchema.partial().extend({
-  status: z.nativeEnum(OrderStatus).optional(),
+  status: z.enum(['PENDING', 'CONFIRMED', 'SHIPPING', 'COMPLETED', 'CANCELLED']).optional(),
 });

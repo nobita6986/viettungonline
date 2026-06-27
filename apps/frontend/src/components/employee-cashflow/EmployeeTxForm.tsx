@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { getTransactionCategories, createTransactionCategory } from '@/app/actions/employee-transactions';
+import { getTransactionCategories, createTransactionCategory } from '@/lib/apiActions';
 import CurrencyInput from '@/components/ui/CurrencyInput';
 import toast from 'react-hot-toast';
 

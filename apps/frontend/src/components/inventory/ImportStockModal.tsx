@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { importStock } from '@/app/actions/inventory';
-import { addProductUnit } from '@/app/actions/products';
+import { importStock } from '@/lib/apiActions';
+import { addProductUnit } from '@/lib/apiActions';
 import toast from 'react-hot-toast';
 import ProductFormModal from '../products/ProductFormModal';
 

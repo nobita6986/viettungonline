@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { CustomerType } from '@prisma/client';
-import { createCustomer, updateCustomer } from '@/app/actions/customers';
+import { createCustomer, updateCustomer } from '@/lib/apiActions';
 import toast from 'react-hot-toast';
+
+type CustomerType = 'BUYER' | 'SUPPLIER';
 
 interface CustomerFormProps {
   customer?: any;

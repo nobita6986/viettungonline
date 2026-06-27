@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { getTransactionCategories, createCategoryQuickly } from '@/app/actions/transactionCategories';
+import { getTransactionCategories, createTransactionCategory } from '@/lib/apiActions';
 import { useMemo } from 'react';
 
 interface Category {
@@ -50,7 +50,7 @@ export const useCategoryStore = create<CategoryState>((set, get) => ({
 
   createQuickly: async (name, type) => {
     try {
-      const res = await createCategoryQuickly(name, type);
+      const res = await createTransactionCategory({ name, type });
       if (res.success && res.data) {
         get().addCategory(res.data);
         return res.data;

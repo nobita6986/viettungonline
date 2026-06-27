@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { createTransaction, updateTransaction } from '@/app/actions/transactions';
+import { createTransaction, updateTransaction } from '@/lib/apiActions';
 import toast from 'react-hot-toast';
 
 import { useCategoryStore, useIncomeCategories, useExpenseCategories } from '@/stores/useCategoryStore';

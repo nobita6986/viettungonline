@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
-import { CustomerType } from '@prisma/client';
 import CustomerForm from './CustomerForm';
-import { deleteCustomer } from '@/app/actions/customers';
+import { deleteCustomer } from '@/lib/apiActions';
 import toast from 'react-hot-toast';
+
+type CustomerType = 'BUYER' | 'SUPPLIER';
 
 interface CustomerListClientProps {
   customers: any[];
