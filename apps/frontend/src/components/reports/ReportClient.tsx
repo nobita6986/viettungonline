@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { getMonthlyReportData } from '@/app/actions/reports';
 import toast from 'react-hot-toast';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import Link from 'next/link';
+import { Link } from 'react-router-dom';
 
 export default function ReportClient() {
   const [year, setYear] = useState(new Date().getFullYear());

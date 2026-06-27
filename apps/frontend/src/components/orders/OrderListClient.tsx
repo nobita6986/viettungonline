@@ -9,7 +9,8 @@ import { deleteOrder } from '@/app/actions/orders';
 import { PencilIcon, TrashIcon, EyeIcon } from '@heroicons/react/24/outline';
 import { useOptimisticMutation } from '@/hooks/useOptimisticMutation';
 
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'react-router-dom';
+import { useRouter, usePathname } from '@/hooks/useRouter';
 import Pagination from '@/components/ui/Pagination';
 import SortableHeader from '@/components/ui/SortableHeader';
 

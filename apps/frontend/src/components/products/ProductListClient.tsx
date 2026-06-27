@@ -1,14 +1,15 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/link';
+import { Link } from 'react-router-dom';
 import { updateProduct } from '@/app/actions/products';
 import toast from 'react-hot-toast';
 import ImportStockModal from '../inventory/ImportStockModal';
 import AdjustStockModal from '../inventory/AdjustStockModal';
 import InventoryHistoryModal from '../inventory/InventoryHistoryModal';
 import ProductFormModal from './ProductFormModal';
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'react-router-dom';
+import { useRouter, usePathname } from '@/hooks/useRouter';
 import Pagination from '@/components/ui/Pagination';
 import SortableHeader from '@/components/ui/SortableHeader';
 

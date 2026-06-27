@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { formatCurrency, formatDateVN } from '@/lib/formatters';
-import Link from 'next/link';
+import { Link } from 'react-router-dom';
 
 interface DebtListClientProps {
   initialData: any[];

@@ -1,14 +1,15 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/link';
+import { Link } from 'react-router-dom';
 import { PlusIcon, CheckCircleIcon, XCircleIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import EmployeeTxForm from './EmployeeTxForm';
 import { createEmployeeTransaction, updateEmployeeTransaction, deleteEmployeeTransaction, approveEmployeeTransaction, rejectEmployeeTransaction, approveMultipleEmployeeTransactions } from '@/app/actions/employee-transactions';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '@/lib/formatters';
 import { usePermissions } from '@/hooks/usePermissions';
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'react-router-dom';
+import { useRouter, usePathname } from '@/hooks/useRouter';
 import Pagination from '@/components/ui/Pagination';
 import SortableHeader from '@/components/ui/SortableHeader';
 

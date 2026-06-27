@@ -1,6 +1,7 @@
 'use client';
 
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'react-router-dom';
+import { useRouter, usePathname } from '@/hooks/useRouter';
 import React from 'react';
 
 interface Props {

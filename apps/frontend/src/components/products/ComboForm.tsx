@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useSearchParams } from 'react-router-dom';
+import { useRouter, usePathname } from '@/hooks/useRouter';
 import { useComboStore } from '@/stores/useComboStore';
 
 export default function ComboForm() {

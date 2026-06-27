@@ -1,11 +1,12 @@
 'use client';
 
 import React from 'react';
-import dynamic from 'next/dynamic';
+import React, { lazy, Suspense } from 'react';
 import { DashboardSummary, ChartDataPoint } from '@/app/actions/dashboard';
 import { formatCurrency } from '@/lib/formatters';
 
-const RevenueChart = dynamic(() => import('./RevenueChart'), { ssr: false, loading: () => <div className="h-[300px] flex items-center justify-center text-gray-400">Đang tải biểu đồ...</div> });
+const RevenueChart_Lazy = lazy(() => import('./RevenueChart'));
+const RevenueChart = (props: any) => <Suspense fallback={<div className="h-[300px] flex items-center justify-center text-gray-400">Đang tải biểu đồ...</div>}><RevenueChart_Lazy {...props} /></Suspense>;
 
 interface DashboardClientProps {
   summary: DashboardSummary;

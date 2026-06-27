@@ -3,7 +3,8 @@
 import React, { useState } from 'react';
 import { createProduct } from '@/app/actions/products';
 import toast from 'react-hot-toast';
-import { useRouter } from 'next/navigation';
+import { useSearchParams } from 'react-router-dom';
+import { useRouter, usePathname } from '@/hooks/useRouter';
 
 interface ProductFormModalProps {
   isOpen: boolean;
