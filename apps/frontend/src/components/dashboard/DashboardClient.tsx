@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import React, { lazy, Suspense } from 'react';
 import { DashboardSummary, ChartDataPoint } from '@/app/actions/dashboard';
 import { formatCurrency } from '@/lib/formatters';
