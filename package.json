@@ -8,7 +8,7 @@
     "node": "22.x"
   },
   "scripts": {
-    "build": "pnpm --filter database build && pnpm --filter backend build",
+    "build": "pnpm --filter database build && pnpm --filter shared-types build && pnpm --filter backend build",
     "start:backend": "pnpm --filter backend start:prod",
     "start:frontend": "pnpm --filter frontend preview"
   },
@@ -24,5 +24,8 @@
       "unrs-resolver",
       "bcryptjs"
     ]
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3"
   }
 }
