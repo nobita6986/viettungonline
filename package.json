@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "packageManager": "pnpm@11.9.0",
   "scripts": {
     "build": "pnpm --filter database build && pnpm --filter backend build",
     "start:backend": "pnpm --filter backend start:prod",
