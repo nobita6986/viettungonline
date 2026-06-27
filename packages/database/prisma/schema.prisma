@@ -1,0 +1,772 @@
+// ============================================
+// VIETTUNG - PRISMA SCHEMA
+// Quáº£n lÃ½ DÃ²ng tiá»n vÃ  ÄÆ¡n hÃ ng
+// ============================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// TÃ€I KHOáº¢N (Accounts)
+// TK TM (Tiá»n máº·t) vÃ  TK CT (CÃ´ng ty)
+// ============================================
+model Account {
+  id        String   @id @default(cuid())
+  name      String // "Tiá»n máº·t", "TÃ i khoáº£n cÃ´ng ty"
+  code      String   @unique // "CASH", "BANK"
+  balance   Decimal  @default(0) @db.Decimal(15, 2)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  transactions Transaction[]
+
+  @@index([code])
+  @@map("accounts")
+}
+
+// ============================================
+// KHÃCH HÃ€NG / NHÃ€ CUNG Cáº¤P (Customers)
+// ============================================
+model Customer {
+  id       String       @id @default(cuid())
+  name     String
+  phone    String?
+  address  String?
+  email    String?
+  type     CustomerType @default(BUYER)
+  isActive Boolean      @default(true) @map("is_active")
+
+  creditLimit Decimal? @map("credit_limit") @db.Decimal(15, 2)
+  currentDebt Decimal  @default(0) @map("current_debt") @db.Decimal(15, 2)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  supplierOrders Order[]        @relation("SupplierOrders")
+  customerOrders Order[]        @relation("CustomerOrders")
+  transactions   Transaction[]
+  debts          CustomerDebt[]
+
+  @@index([name])
+  @@index([type])
+  @@index([isActive])
+  @@index([createdAt])
+  @@map("customers")
+}
+
+enum CustomerType {
+  BUYER // KhÃ¡ch mua hÃ ng
+  SUPPLIER // NhÃ  cung cáº¥p
+}
+
+// ============================================
+// GIAO Dá»ŠCH (Transactions)
+// Thu, Chi, LÃ£i tá»« Ä‘Æ¡n hÃ ng
+// ============================================
+model Transaction {
+  id          String          @id @default(cuid())
+  date        DateTime        @default(now())
+  type        TransactionType
+  amount      Decimal         @db.Decimal(15, 2)
+  description String?
+  category    String? // "Váº­t tÆ°", "Ä‚n uá»‘ng", "Thanh toÃ¡n" (Legacy)
+
+  cashFlowGroup CashFlowGroup @default(OPERATIONAL) @map("cash_flow_group")
+
+  // LiÃªn káº¿t vá»›i danh má»¥c Thu/Chi chuáº©n hÃ³a
+  categoryId  String?              @map("category_id")
+  categoryRef TransactionCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  // LiÃªn káº¿t vá»›i tÃ i khoáº£n
+  accountId String?  @map("account_id")
+  account   Account? @relation(fields: [accountId], references: [id])
+
+  // Liên kết với Đơn hàng (N-M qua OrderTransaction)
+  orderTransactions OrderTransaction[]
+
+  // Liên kết với Người thực hiện (Nhân viên)
+  userId  String? @map("user_id")
+  user    User?   @relation(fields: [userId], references: [id])
+
+  // LiÃªn káº¿t vá»›i khÃ¡ch hÃ ng (náº¿u cÃ³)
+  customerId String?   @map("customer_id")
+  customer   Customer? @relation(fields: [customerId], references: [id])
+
+  // NgÆ°á» i táº¡o
+  createdBy           String?              @map("created_by")
+  employeeTransaction EmployeeTransaction?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([date])
+  @@index([type])
+  @@index([accountId])
+  @@index([userId])
+  @@index([customerId])
+  @@index([categoryId])
+  @@index([createdAt])
+  @@map("transactions")
+}
+
+enum TransactionType {
+  INCOME // Thu tiá» n
+  EXPENSE // Chi tiá» n
+  PROFIT // LÃ£i tá»« Ä‘Æ¡n hÃ ng
+  COST // GiÃ¡ vá»‘n
+  RECEIPT // BÃ¡o thu
+}
+
+enum CashFlowGroup {
+  OPERATIONAL // DÃ²ng tiá» n váº­n hÃ nh
+  TRADING // DÃ²ng tiá» n kinh doanh
+}
+
+// ============================================
+// DANH Má»¤C Sáº¢N PHáº¨M & KHO HÃ€NG (Inventory)
+// ============================================
+
+enum ProductType {
+  STANDARD
+  COMBO
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  description String?
+  products    Product[]
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@map("categories")
+}
+
+model Product {
+  id    String      @id @default(cuid())
+  sku   String      @unique
+  name  String
+  type  ProductType @default(STANDARD)
+  image String?
+
+  baseUnit   String  @default("CÃ¡i") @map("base_unit")
+  hasVariant Boolean @default(false) @map("has_variant")
+
+  buyPrice  Decimal @map("buy_price") @db.Decimal(15, 2)
+  sellPrice Decimal @map("sell_price") @db.Decimal(15, 2)
+  stockQty  Int     @default(0) @map("stock_qty")
+
+  categoryId String?   @map("category_id")
+  category   Category? @relation(fields: [categoryId], references: [id])
+
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  orderItems      OrderItem[]
+  inventoryLogs   InventoryLog[]
+  units           ProductUnit[]
+  inventoryAlerts InventoryAlert[]
+
+  comboItems   ComboComponent[] @relation("ComboParent")
+  partOfCombos ComboComponent[] @relation("ComboChild")
+
+  @@index([sku])
+  @@index([categoryId])
+  @@index([type])
+  @@index([isActive])
+  @@index([name])
+  @@map("products")
+}
+
+model ProductUnit {
+  id              String   @id @default(cuid())
+  productId       String   @map("product_id")
+  product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  unitName        String   @map("unit_name")
+  conversionRatio Int      @map("conversion_ratio")
+  barcode         String?  @unique
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@unique([productId, unitName])
+  @@index([productId])
+  @@map("product_units")
+}
+
+model ComboComponent {
+  id          String   @id @default(cuid())
+  comboId     String   @map("combo_id")
+  combo       Product  @relation("ComboParent", fields: [comboId], references: [id], onDelete: Cascade)
+  componentId String   @map("component_id")
+  component   Product  @relation("ComboChild", fields: [componentId], references: [id], onDelete: Restrict)
+  quantity    Int
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@unique([comboId, componentId])
+  @@index([comboId])
+  @@index([componentId])
+  @@map("combo_components")
+}
+
+model InventoryLog {
+  id        String   @id @default(cuid())
+  productId String   @map("product_id")
+  product   Product  @relation(fields: [productId], references: [id])
+  changeQty Int      @map("change_qty")
+  reason    String
+  note      String?
+  userId    String?  @map("user_id")
+  user      User?    @relation(fields: [userId], references: [id])
+  orderId   String?  @map("order_id")
+  order     Order?   @relation(fields: [orderId], references: [id])
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([productId])
+  @@index([orderId])
+  @@map("inventory_logs")
+}
+
+enum PaymentStatus {
+  UNPAID
+  PARTIAL
+  PAID
+}
+
+enum PurchaseStatus {
+  PENDING
+  PAID
+}
+
+enum SaleStatus {
+  PENDING
+  PAID
+}
+
+enum OrderType {
+  PURCHASE // Ä Æ¡n nháº­p hÃ ng tá»« nhÃ  cung cáº¥p
+  SALE // Ä Æ¡n bÃ¡n hÃ ng cho khÃ¡ch
+}
+
+// ============================================
+// Ä Æ N HÃ€NG (Orders)
+// ============================================
+model Order {
+  id String @id @default(cuid())
+
+  // ThÃ´ng tin chung
+  orderCode     String        @unique @map("order_code")
+  type          OrderType     @default(SALE)
+  status        OrderStatus   @default(PENDING)
+  paymentStatus PaymentStatus @default(UNPAID) @map("payment_status")
+  totalAmount   Decimal       @default(0) @map("total_amount") @db.Decimal(15, 2)
+  paidAmount    Decimal       @default(0) @map("paid_amount") @db.Decimal(15, 2)
+
+  // ThÃ´ng tin mua hÃ ng (tá»« nhÃ  cung cáº¥p)
+  supplierId     String?         @map("supplier_id")
+  supplier       Customer?       @relation("SupplierOrders", fields: [supplierId], references: [id])
+  purchaseDate   DateTime?       @map("purchase_date")
+  purchaseQty    Int?            @map("purchase_qty")
+  purchaseUnit   String?         @map("purchase_unit")
+  purchasePrice  Decimal?        @map("purchase_price") @db.Decimal(15, 2)
+  purchaseStatus PurchaseStatus? @default(PENDING) @map("purchase_status")
+  receivedDate   DateTime?       @map("received_date")
+
+  // ThÃ´ng tin bÃ¡n hÃ ng (cho khÃ¡ch)
+  customerId    String?     @map("customer_id")
+  customer      Customer?   @relation("CustomerOrders", fields: [customerId], references: [id])
+  saleDate      DateTime?   @map("sale_date")
+  saleQty       Int?        @map("sale_qty")
+  saleUnit      String?     @map("sale_unit")
+  salePrice     Decimal?    @map("sale_price") @db.Decimal(15, 2)
+  saleStatus    SaleStatus? @default(PENDING) @map("sale_status")
+  expectedDate  DateTime?   @map("expected_date")
+  deliveredDate DateTime?   @map("delivered_date")
+
+  // TÃ­nh toÃ¡n
+  profit Decimal? @db.Decimal(15, 2)
+
+  // Ghi chÃº
+  notes String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  items             OrderItem[]
+  orderTransactions OrderTransaction[]
+  history           OrderHistory[]
+  inventoryLogs InventoryLog[]
+  customerDebts CustomerDebt[]
+  salesReturns  SalesReturn[]
+
+  // Phá»¥ trÃ¡ch bá»Ÿi NV
+  userId String? @map("user_id")
+  user   User?   @relation(fields: [userId], references: [id])
+
+  @@index([status])
+  @@index([customerId])
+  @@index([supplierId])
+  @@index([orderCode])
+  @@index([purchaseDate])
+  @@index([saleDate])
+  @@index([type])
+  @@index([paymentStatus])
+  @@index([userId])
+  @@map("orders")
+}
+
+enum OrderStatus {
+  DRAFT
+  PENDING // Chá»  xá»­ lÃ½
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  BUYING // Ä ang mua hÃ ng
+  RECEIVED // Ä Ã£ nháº­n hÃ ng
+  SELLING // Ä ang bÃ¡n hÃ ng
+  SOLD // Ä Ã£ bÃ¡n
+  COMPLETED // HoÃ n thÃ nh (Ä‘Ã£ thu tiá» n)
+  RETURNED
+  PARTIAL_RETURN
+  CANCELLED // Hủy
+}
+
+// ============================================
+// CHI TIáº¾T Ä Æ N HÃ€NG (Order Items)
+// ============================================
+model OrderItem {
+  id      String @id @default(cuid())
+  orderId String @map("order_id")
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  // ThÃ´ng tin sáº£n pháº©m
+  productId   String?  @map("product_id")
+  product     Product? @relation(fields: [productId], references: [id])
+  productName String   @map("product_name")
+  unit        String // cÃ¡i, lÃ­t, kg...
+
+  // Sá»‘ lÆ°á»£ng
+  qty Int
+
+  // GiÃ¡ mua
+  buyPrice Decimal @map("buy_price") @db.Decimal(15, 2)
+  buyTotal Decimal @map("buy_total") @db.Decimal(15, 2)
+
+  // GiÃ¡ bÃ¡n
+  sellPrice Decimal @map("sell_price") @db.Decimal(15, 2)
+  sellTotal Decimal @map("sell_total") @db.Decimal(15, 2)
+
+  // LÃ£i
+  profit Decimal @db.Decimal(15, 2)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  salesReturnItems SalesReturnItem[]
+
+  @@index([orderId])
+  @@index([productId])
+  @@map("order_items")
+}
+
+// ============================================
+// THANH TOÁN ĐƠN HÀNG (Order Transactions - N-M)
+// ============================================
+model OrderTransaction {
+  id            String      @id @default(cuid())
+  orderId       String      @map("order_id")
+  order         Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  transactionId String      @map("transaction_id")
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  appliedAmount Decimal     @map("applied_amount") @db.Decimal(15, 2)
+  createdAt     DateTime    @default(now()) @map("created_at")
+
+  @@unique([orderId, transactionId])
+  @@index([orderId])
+  @@index([transactionId])
+  @@map("order_transactions")
+}
+
+// Báº£ng lÆ°u lá»‹ch sá»­ thay Ä‘á»•i tráº¡ng thÃ¡i Ä Æ¡n hÃ ng
+model OrderHistory {
+  id         String       @id @default(cuid())
+  orderId    String       @map("order_id")
+  order      Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  statusFrom OrderStatus? @map("status_from")
+  statusTo   OrderStatus  @map("status_to")
+  note       String?
+  userId     String?      @map("user_id")
+  user       User?        @relation(fields: [userId], references: [id])
+  createdAt  DateTime     @default(now()) @map("created_at")
+
+  @@index([orderId])
+  @@map("order_history")
+}
+
+// ============================================
+// DANH Má»¤C CHI PHÃ  (Expense Categories)
+// ============================================
+model ExpenseCategory {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  color       String? // Hex color for UI
+  icon        String? // Icon name
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("expense_categories")
+}
+
+// ============================================
+// BÃ O CÃ O Tá»”NG Há»¢P THÃ NG (Monthly Summary)
+// Cache Ä‘á»ƒ tÄƒng performance
+// ============================================
+model MonthlySummary {
+  id              String   @id @default(cuid())
+  year            Int
+  month           Int
+  totalIncome     Decimal  @map("total_income") @db.Decimal(15, 2)
+  totalExpense    Decimal  @map("total_expense") @db.Decimal(15, 2)
+  totalProfit     Decimal  @map("total_profit") @db.Decimal(15, 2)
+  orderCount      Int      @default(0) @map("order_count")
+  completedOrders Int      @default(0) @map("completed_orders")
+  openingBalance  Decimal  @map("opening_balance") @db.Decimal(15, 2)
+  closingBalance  Decimal  @map("closing_balance") @db.Decimal(15, 2)
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@unique([year, month])
+  @@index([year, month])
+  @@map("monthly_summaries")
+}
+
+// ============================================
+// NGÆ¯á»œI DÃ™NG & PHÃ‚N QUYá»€N (Users & RBAC)
+// ============================================
+model User {
+  id           String   @id @default(cuid())
+  name         String?
+  email        String   @unique
+  password     String // Hashed password
+  image        String?
+  phone        String?
+  referralCode String?  @unique @map("referral_code")
+  roleId       String?  @map("role_id")
+  role         Role?    @relation(fields: [roleId], references: [id])
+  isActive     Boolean  @default(true) @map("is_active")
+  baseSalary   Decimal? @map("base_salary") @db.Decimal(15, 2)
+
+  permissions  UserPermission[]
+  employeeTxs  EmployeeTransaction[]
+  payouts      Payout[]
+  auditLogs    AuditLog[]
+  orders       Order[]
+  transactions Transaction[] // Giao dịch tài chính do user này thực hiện
+
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+  inventoryLogs  InventoryLog[]
+  orderHistories OrderHistory[]
+  salesReturns   SalesReturn[]
+
+  @@map("users")
+}
+
+model Role {
+  id          String  @id @default(cuid())
+  name        String  @unique // "ADMIN", "ACCOUNTANT", "SALE", "DELIVERY", "COLLABORATOR"
+  description String?
+
+  users       User[]
+  permissions RolePermission[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String  @id @default(cuid())
+  code        String  @unique // "VIEW_DASHBOARD", "CREATE_ORDER", "APPROVE_TRANSACTION"
+  description String?
+  module      String // "DASHBOARD", "ORDER", "TRANSACTION", "SYSTEM"
+
+  roles RolePermission[]
+  users UserPermission[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String     @map("role_id")
+  permissionId String     @map("permission_id")
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model UserPermission {
+  userId       String     @map("user_id")
+  permissionId String     @map("permission_id")
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([userId, permissionId])
+  @@map("user_permissions")
+}
+
+// ==========================================
+// HOA Há»’NG & DOANH Sá» (SALES & COMMISSIONS)
+// ==========================================
+
+model CommissionRule {
+  id          String   @id @default(cuid())
+  name        String
+  targetType  String // "REVENUE" (Doanh thu), "PRODUCT_CATEGORY"
+  minAmount   Decimal? @map("min_amount") @db.Decimal(15, 2) // NgÆ°á»¡ng doanh thu tá»‘i thiá»ƒu
+  ratePercent Decimal  @map("rate_percent") @db.Decimal(5, 2) // % Hoa há»“ng (VD: 5.0)
+  fixedAmount Decimal? @map("fixed_amount") @db.Decimal(15, 2) // Hoáº·c sá»‘ tiá»n cá»‘ Ä‘á»‹nh/Ä‘Æ¡n
+  isActive    Boolean  @default(true) @map("is_active")
+
+  @@index([minAmount])
+  @@map("commission_rules")
+}
+
+enum PayoutStatus {
+  PENDING
+  PAID
+}
+
+// Báº£ng chá»‘t hoa há»“ng hÃ ng ká»³
+model Payout {
+  id     String @id @default(cuid())
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id])
+
+  periodMonth Int     @map("period_month")
+  periodYear  Int     @map("period_year")
+  totalSales  Decimal @map("total_sales") @db.Decimal(15, 2) // Tá»•ng doanh sá»‘ trong ká»³
+  commission  Decimal @db.Decimal(15, 2) // Sá»‘ tiá»n hoa há»“ng Ä‘Æ°á»£c nháº­n
+
+  status PayoutStatus @default(PENDING)
+  paidAt DateTime?    @map("paid_at")
+
+  @@unique([userId, periodMonth, periodYear])
+  @@map("payouts")
+}
+
+// ==========================================
+// Sá»” QUá»¸ & CÃ”NG Ná»¢ NHÃ‚N VIÃŠN (CASH FLOW)
+// ==========================================
+
+model TransactionCategory {
+  id    String        @id @default(cuid())
+  code  String?       @unique // ADVANCE_SALARY, MEAL, GAS, COLLECTION...
+  name  String        @unique
+  type  String // INCOME hoáº·c EXPENSE
+  group CashFlowGroup @default(OPERATIONAL)
+
+  // Category Hierarchy
+  parentId String?               @map("parent_id")
+  parent   TransactionCategory?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children TransactionCategory[] @relation("CategoryHierarchy")
+
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  employeeTxs  EmployeeTransaction[]
+  transactions Transaction[]
+
+  @@index([type])
+  @@map("transaction_categories")
+}
+
+enum EmployeeTxType {
+  CREDIT
+  DEBIT
+  REQUEST // Phiáº¿u Ä‘á» nghá»‹
+}
+
+enum EmployeeTxStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model EmployeeTransaction {
+  id     String @id @default(cuid())
+  userId String @map("user_id") // NhÃ¢n viÃªn liÃªn quan
+  user   User   @relation(fields: [userId], references: [id])
+
+  categoryId String              @map("category_id")
+  category   TransactionCategory @relation(fields: [categoryId], references: [id])
+
+  // LiÃªn káº¿t Ä‘Æ¡n hÃ ng náº¿u giao dá»‹ch nÃ y lÃ  thu há»™ tiá»n hoáº·c hoa há»“ng cho 1 Ä‘Æ¡n cá»¥ thá»ƒ
+  orderId String? @map("order_id")
+
+  // LiÃªn káº¿t trá»±c tiáº¿p vÃ o DÃ²ng Tiá»n CÃ´ng Ty (Global Transaction)
+  // Khi phiáº¿u nÃ y Ä‘Æ°á»£c APPROVED, há»‡ thá»‘ng sáº½ tá»± sinh 1 Transaction tÆ°Æ¡ng á»©ng á»Ÿ Sá»• quá»¹ CÃ´ng ty
+  transactionId String?      @unique @map("transaction_id")
+  transaction   Transaction? @relation(fields: [transactionId], references: [id])
+
+  amount      Decimal        @db.Decimal(15, 2)
+  type        EmployeeTxType
+  description String?
+
+  status EmployeeTxStatus @default(PENDING)
+
+  // NgÆ°á»i duyá»‡t (Káº¿ toÃ¡n/Admin)
+  approvedById String?   @map("approved_by_id")
+  approvedAt   DateTime? @map("approved_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([orderId])
+  @@index([status, userId])
+  @@map("employee_transactions")
+}
+
+// ==========================================
+// AUDIT LOG (Lá»ŠCH Sá»¬ THAO TÃC)
+// ==========================================
+
+model AuditLog {
+  id     String @id @default(cuid())
+  userId String @map("user_id") // NgÆ°á»i thá»±c hiá»‡n
+  user   User   @relation(fields: [userId], references: [id])
+
+  action     String // "APPROVE_EXPENSE", "CHANGE_ROLE", "EDIT_BALANCE"
+  entityType String @map("entity_type") // "EmployeeTransaction", "User"
+  entityId   String @map("entity_id") // ID cá»§a record bá»‹ tÃ¡c Ä‘á»™ng
+  oldValues  Json?  @map("old_values") // Dá»¯ liá»‡u cÅ©
+  newValues  Json?  @map("new_values") // Dá»¯ liá»‡u má»›i
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}
+
+// ==========================================
+// INVENTORY ALERTS (AUTO-STOCK ALERTS)
+// ==========================================
+model InventorySettings {
+  id                String @id @default(cuid())
+  lowStockThreshold Int    @default(10) @map("low_stock_threshold")
+  criticalThreshold Int    @default(5) @map("critical_threshold")
+
+  @@map("inventory_settings")
+}
+
+model InventoryAlert {
+  id                String   @id @default(cuid())
+  productId         String   @map("product_id")
+  product           Product  @relation(fields: [productId], references: [id])
+  alertType         String // "LOW_STOCK", "CRITICAL_STOCK"
+  level             String // "WARNING", "CRITICAL"
+  suggestedOrderQty Int      @default(0) @map("suggested_order_qty")
+  status            String   @default("OPEN") // "OPEN", "RESOLVED"
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@index([productId])
+  @@index([status])
+  @@map("inventory_alerts")
+}
+
+// ==========================================
+// QUáº¢N LÃ CÃ”NG Ná»¢ (DEBT MANAGEMENT)
+// ==========================================
+model CustomerDebt {
+  id             String    @id @default(cuid())
+  customerId     String    @map("customer_id")
+  customer       Customer  @relation(fields: [customerId], references: [id])
+  type           String // "RECEIVABLE" (Pháº£i thu), "PAYABLE" (Pháº£i tráº£)
+  originalAmount Decimal   @map("original_amount") @db.Decimal(15, 2)
+  currentAmount  Decimal   @map("current_amount") @db.Decimal(15, 2)
+  dueDate        DateTime? @map("due_date")
+  status         String    @default("PENDING") // "PENDING", "PARTIAL", "PAID"
+  agingBucket    String    @default("CURRENT") // "CURRENT", "30_DAYS", "60_DAYS", "90_DAYS"
+
+  orderId String? @map("order_id")
+  order   Order?  @relation(fields: [orderId], references: [id])
+
+  payments DebtPayment[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([customerId])
+  @@index([type])
+  @@index([status])
+  @@map("customer_debts")
+}
+
+model DebtPayment {
+  id            String       @id @default(cuid())
+  debtId        String       @map("debt_id")
+  debt          CustomerDebt @relation(fields: [debtId], references: [id])
+  amount        Decimal      @db.Decimal(15, 2)
+  paymentDate   DateTime     @default(now()) @map("payment_date")
+  paymentMethod String?      @map("payment_method")
+  notes         String?
+  createdAt     DateTime     @default(now()) @map("created_at")
+
+  @@index([debtId])
+  @@map("debt_payments")
+}
+
+// ==========================================
+// QUẢN LÝ HÀNG HOÀN TRẢ (SALES RETURNS)
+// ==========================================
+model SalesReturn {
+  id          String   @id @default(cuid())
+  orderId     String   @map("order_id")
+  order       Order    @relation(fields: [orderId], references: [id])
+  returnDate  DateTime @default(now()) @map("return_date")
+  status      String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  totalRefund Decimal  @default(0) @map("total_refund") @db.Decimal(15, 2)
+  reason      String?
+  userId      String?  @map("user_id")
+  user        User?    @relation(fields: [userId], references: [id])
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  items SalesReturnItem[]
+
+  @@index([orderId])
+  @@index([status])
+  @@map("sales_returns")
+}
+
+model SalesReturnItem {
+  id            String      @id @default(cuid())
+  salesReturnId String      @map("sales_return_id")
+  salesReturn   SalesReturn @relation(fields: [salesReturnId], references: [id], onDelete: Cascade)
+  orderItemId   String      @map("order_item_id")
+  orderItem     OrderItem   @relation(fields: [orderItemId], references: [id])
+
+  qtyReturned  Int     @map("qty_returned")
+  condition    String  @default("SALEABLE") // SALEABLE, DAMAGED
+  refundAmount Decimal @default(0) @map("refund_amount") @db.Decimal(15, 2)
+  note         String?
+
+  @@index([salesReturnId])
+  @@map("sales_return_items")
+}
