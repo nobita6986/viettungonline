@@ -12,8 +12,11 @@
     "dev:frontend": "pnpm --filter frontend dev",
     "dev": "start pnpm run dev:backend && start pnpm run dev:frontend",
     "build": "pnpm --filter database build && pnpm --filter shared-types build && pnpm --filter backend build",
+    "build:frontend": "pnpm --filter frontend build",
     "start:backend": "pnpm --filter backend start:prod",
-    "start:frontend": "pnpm --filter frontend preview"
+    "start:frontend": "pnpm --filter frontend preview",
+    "lint": "pnpm -r lint",
+    "type-check": "pnpm -r type-check"
   },
   "keywords": [],
   "author": "",
