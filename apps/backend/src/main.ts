@@ -3,7 +3,16 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.enableCors();
+  
+  // Global prefix for all routes
+  app.setGlobalPrefix('api');
+  
+  app.enableCors({
+    origin: process.env.FRONTEND_URL || '*',
+    credentials: true,
+  });
+  
   await app.listen(process.env.PORT ?? 3000);
+  console.log(`Application running on: ${await app.getUrl()}`);
 }
 bootstrap();
