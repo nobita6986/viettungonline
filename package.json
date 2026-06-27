@@ -4,6 +4,9 @@
   "description": "",
   "main": "index.js",
   "packageManager": "pnpm@11.9.0",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "build": "pnpm --filter database build && pnpm --filter backend build",
     "start:backend": "pnpm --filter backend start:prod",
