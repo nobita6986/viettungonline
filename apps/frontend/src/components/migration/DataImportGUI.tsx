@@ -176,9 +176,9 @@ export default function DataImportGUI() {
   const handleSave = async () => {
     if (importType === 'FINANCE') {
       // Validate missing fields for Finance
-      const invalidRows = parsedData.filter(d => !d.accountId || !d.date || !d.amount || !d.description);
+      const invalidRows = parsedData.filter(d => !d.accountId || !d.date || !d.amount);
       if (invalidRows.length > 0) {
-        toast.error(`Có ${invalidRows.length} dòng chưa điền đủ Tài khoản, Ngày, hoặc Số tiền/Ghi chú`);
+        toast.error(`Có ${invalidRows.length} dòng chưa điền đủ Tài khoản, Ngày, hoặc Số tiền`);
         return;
       }
     } else {
@@ -615,7 +615,7 @@ export default function DataImportGUI() {
                           type="text"
                           value={row.description}
                           onChange={(e) => handleFieldChange(row.id, 'description', e.target.value)}
-                          className={`w-full text-sm border-gray-300 rounded ${!row.description ? 'border-red-500 bg-red-50' : ''}`}
+                          className="w-full text-sm border-gray-300 rounded"
                         />
                       </td>
                       <td className="px-4 py-2">
