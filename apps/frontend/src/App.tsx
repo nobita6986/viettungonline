@@ -1,45 +1,56 @@
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
+import React, { Suspense } from 'react';
+
+// Import components (Lazy load for better performance)
+const DashboardClient = React.lazy(() => import('./components/dashboard/DashboardClient'));
+const OrderListClient = React.lazy(() => import('./components/orders/OrderListClient'));
+const ProductListClient = React.lazy(() => import('./components/products/ProductListClient'));
+const TransactionListClient = React.lazy(() => import('./components/transactions/TransactionListClient'));
 
 function Layout({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
+  const isActive = (path: string) => location.pathname === path ? 'bg-blue-50 text-blue-700 border-r-4 border-blue-600' : 'text-gray-700 hover:bg-gray-50';
+
   return (
-    <div className="flex h-screen bg-gray-100">
-      <aside className="w-64 bg-white border-r border-gray-200">
-        <div className="p-4 border-b border-gray-200">
-          <h1 className="text-xl font-bold text-blue-600">Việt Tùng ERP</h1>
+    <div className="flex h-screen bg-gray-50">
+      <aside className="w-64 bg-white border-r border-gray-200 shadow-sm flex flex-col">
+        <div className="p-6 border-b border-gray-100">
+          <h1 className="text-2xl font-bold text-blue-700 tracking-tight">Việt Tùng ERP</h1>
         </div>
-        <nav className="p-4 space-y-2">
-          <Link to="/" className="block p-2 text-gray-700 hover:bg-gray-100 rounded">Trang chủ</Link>
-          <Link to="/orders" className="block p-2 text-gray-700 hover:bg-gray-100 rounded">Đơn hàng</Link>
-          <Link to="/products" className="block p-2 text-gray-700 hover:bg-gray-100 rounded">Sản phẩm</Link>
-          <Link to="/transactions" className="block p-2 text-gray-700 hover:bg-gray-100 rounded">Sổ quỹ</Link>
+        <nav className="flex-1 py-4 space-y-1">
+          <Link to="/" className={`block px-6 py-3 font-medium transition-colors ${isActive('/')}`}>Trang chủ</Link>
+          <Link to="/orders" className={`block px-6 py-3 font-medium transition-colors ${isActive('/orders')}`}>Đơn hàng</Link>
+          <Link to="/products" className={`block px-6 py-3 font-medium transition-colors ${isActive('/products')}`}>Sản phẩm</Link>
+          <Link to="/transactions" className={`block px-6 py-3 font-medium transition-colors ${isActive('/transactions')}`}>Sổ quỹ</Link>
         </nav>
       </aside>
       <main className="flex-1 overflow-auto p-8">
-        {children}
+        <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>}>
+          {children}
+        </Suspense>
       </main>
     </div>
   );
 }
 
-function Welcome() {
-  return (
-    <div className="bg-white p-8 rounded-lg shadow">
-      <h2 className="text-2xl font-bold mb-4">Chào mừng đến với Việt Tùng ERP (Vite React)</h2>
-      <p className="text-gray-600 mb-4">Hệ thống đã được chuyển đổi thành công từ Next.js sang Vite.</p>
-      <p className="text-gray-600">Các thành phần (Components) của bạn đã được thay thế Link/Router từ Next.js sang React Router. Tuy nhiên bạn cần kết nối chúng với API Backend (NestJS) thông qua các hooks như useEffect hoặc React Query.</p>
-    </div>
-  );
-}
+// Mock Data to prevent crashes
+const DUMMY_DASHBOARD_SUMMARY = {
+  totalIncome: 0,
+  totalExpense: 0,
+  profit: 0,
+  orderCount: 0,
+  accountBalances: []
+};
 
 function App() {
   return (
     <BrowserRouter>
       <Layout>
         <Routes>
-          <Route path="/" element={<Welcome />} />
-          <Route path="/orders" element={<div>Trang Đơn Hàng (Đang cập nhật)</div>} />
-          <Route path="/products" element={<div>Trang Sản Phẩm (Đang cập nhật)</div>} />
-          <Route path="/transactions" element={<div>Trang Sổ Quỹ (Đang cập nhật)</div>} />
+          <Route path="/" element={<DashboardClient summary={DUMMY_DASHBOARD_SUMMARY} chartData={[]} />} />
+          <Route path="/orders" element={<OrderListClient orders={[]} customers={[]} />} />
+          <Route path="/products" element={<ProductListClient products={[]} categories={[]} />} />
+          <Route path="/transactions" element={<TransactionListClient transactions={[]} categories={[]} accounts={[]} />} />
         </Routes>
       </Layout>
     </BrowserRouter>
