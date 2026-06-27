@@ -8,6 +8,9 @@
     "node": "22.x"
   },
   "scripts": {
+    "dev:backend": "pnpm --filter backend start:dev",
+    "dev:frontend": "pnpm --filter frontend dev",
+    "dev": "start pnpm run dev:backend && start pnpm run dev:frontend",
     "build": "pnpm --filter database build && pnpm --filter shared-types build && pnpm --filter backend build",
     "start:backend": "pnpm --filter backend start:prod",
     "start:frontend": "pnpm --filter frontend preview"
