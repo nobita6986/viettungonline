@@ -3,9 +3,7 @@ nixPkgs = ["nodejs_22", "pnpm"]
 
 [build]
 builder = "nixpacks"
-buildCommand = "cd apps/backend && pnpm install --no-frozen-lockfile && pnpm run build"
-installCommand = "pnpm install --no-frozen-lockfile"
-runCommand = "cd apps/backend && node dist/main.js"
+buildCommand = "pnpm install && pnpm --filter backend build"
 
 [deploy]
 startCommand = "cd apps/backend && node dist/main.js"
