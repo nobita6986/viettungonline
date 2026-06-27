@@ -9,12 +9,13 @@ import { UserModule } from './users/user.module';
 import { AuthModule } from './auth/auth.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { DebtModule } from './debts/debt.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
     OrdersModule, TransactionModule, InventoryModule, 
     CustomerModule, UserModule, AuthModule, 
-    DashboardModule, DebtModule
+    DashboardModule, DebtModule, HealthModule
   ],
   controllers: [AppController],
   providers: [AppService],
