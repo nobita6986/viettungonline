@@ -1,6 +1,9 @@
+[phases.setup]
+nixPkgs = ["nodejs_22", "pnpm"]
+
 [build]
 builder = "nixpacks"
-buildCommand = "pnpm install && pnpm run build"
+buildCommand = "pnpm install --no-frozen-lockfile && pnpm run build"
 
 [deploy]
 startCommand = "pnpm run start:backend"
